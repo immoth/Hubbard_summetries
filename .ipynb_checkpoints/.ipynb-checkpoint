@@ -1,0 +1,2742 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Decomposing the Heisenberg model using symmeteries\n",
+    "\n",
+    "## Following https://arxiv.org/pdf/1101.3281.pdf"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from qiskit import quantum_info as qi\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "pd.options.display.float_format = '{:,.1f}'.format"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def I0(L):\n",
+    "    label = \"\"\n",
+    "    for i in range(0,L):\n",
+    "        label += \"I\"\n",
+    "    return qi.Operator.from_label(label).data\n",
+    "\n",
+    "def Sx(l,L):\n",
+    "    label = \"\"\n",
+    "    for i in range(0,l):\n",
+    "        label += \"I\"\n",
+    "    label += \"X\"\n",
+    "    for i in range(l+1,L):\n",
+    "        label += \"I\"\n",
+    "    return qi.Operator.from_label(label).data\n",
+    "\n",
+    "def Sy(l,L):\n",
+    "    label = \"\"\n",
+    "    for i in range(0,l):\n",
+    "        label += \"I\"\n",
+    "    label += \"Y\"\n",
+    "    for i in range(l+1,L):\n",
+    "        label += \"I\"\n",
+    "    return qi.Operator.from_label(label).data\n",
+    "\n",
+    "def Sz(l,L):\n",
+    "    label = \"\"\n",
+    "    for i in range(0,l):\n",
+    "        label += \"I\"\n",
+    "    label += \"Z\"\n",
+    "    for i in range(l+1,L):\n",
+    "        label += \"I\"\n",
+    "    return qi.Operator.from_label(label).data\n",
+    "    \n",
+    "def Sp(l,L):\n",
+    "    return Sx(0,L)+Sy(0,L)\n",
+    "\n",
+    "def Sm(l,L):\n",
+    "    return Sx(0,L)-Sy(0,L)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def H(Jx,Jy,Jz,L):\n",
+    "    h=0\n",
+    "    for i in range(0,L-1):\n",
+    "        h+= Jx*np.dot(Sz(i,L),Sz(i+1,L))\n",
+    "        h+= Jy*np.dot(Sx(i,L),Sx(i+1,L))\n",
+    "        h+= Jz*np.dot(Sy(i,L),Sy(i+1,L))\n",
+    "    h+= Jx*np.dot(Sz(L-1,L),Sz(0,L))\n",
+    "    h+= Jy*np.dot(Sx(L-1,L),Sx(0,L))\n",
+    "    h+= Jz*np.dot(Sy(L-1,L),Sy(0,L))\n",
+    "    return h\n",
+    "        "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[ 2.+0.j,  0.+0.j,  0.+0.j,  0.+0.j],\n",
+       "       [ 0.+0.j, -2.+0.j,  4.+0.j,  0.+0.j],\n",
+       "       [ 0.+0.j,  4.+0.j, -2.+0.j,  0.+0.j],\n",
+       "       [ 0.+0.j,  0.+0.j,  0.+0.j,  2.+0.j]])"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "H(1,1,1,2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         0         1        2         3        4         5        6         7\n",
+       "0 1.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j\n",
+       "1 0.0+0.0j -1.0+0.0j 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j\n",
+       "2 0.0+0.0j  0.0+0.0j 1.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j\n",
+       "3 0.0+0.0j  0.0+0.0j 0.0+0.0j -1.0+0.0j 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j\n",
+       "4 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j 1.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j\n",
+       "5 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j 0.0+0.0j -1.0+0.0j 0.0+0.0j  0.0+0.0j\n",
+       "6 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j 1.0+0.0j  0.0+0.0j\n",
+       "7 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j 0.0+0.0j  0.0+0.0j 0.0+0.0j -1.0+0.0j"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.DataFrame(Sz(2,3))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         0        1        2        3         4         5         6         7\n",
+       "0 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j\n",
+       "1 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j\n",
+       "2 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j\n",
+       "3 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j\n",
+       "4 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j -1.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j\n",
+       "5 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j  0.0+0.0j -1.0+0.0j  0.0+0.0j  0.0+0.0j\n",
+       "6 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j  0.0+0.0j  0.0+0.0j -1.0+0.0j  0.0+0.0j\n",
+       "7 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j -1.0+0.0j"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.DataFrame(Sz(0,3))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         0        1        2        3        4        5        6        7\n",
+       "0 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "1 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "2 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j\n",
+       "3 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j\n",
+       "4 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "5 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "6 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "7 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.DataFrame(Sx(0,3))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         0        1        2        3        4        5        6        7\n",
+       "0 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "1 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "2 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "3 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "4 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "5 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "6 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j\n",
+       "7 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "these = 1/2*(I0(3)-np.dot(Sz(0,3),Sz(2,3)))\n",
+    "pd.DataFrame(these)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         0        1        2        3        4        5        6        7\n",
+       "0 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "1 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "2 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j\n",
+       "3 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j\n",
+       "4 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "5 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "6 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "7 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "flip = np.dot(Sx(0,3),Sx(2,3))\n",
+    "pd.DataFrame(flip)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         0        1        2        3        4        5        6        7\n",
+       "0 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "1 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "2 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "3 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j\n",
+       "4 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "5 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "6 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "7 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "swap = np.dot(flip,these)\n",
+    "pd.DataFrame(swap)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>1.0+0.0j</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         0        1        2        3        4        5        6        7\n",
+       "0 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "1 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "2 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "3 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j\n",
+       "4 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "5 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "6 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j\n",
+       "7 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 0.0+0.0j 1.0+0.0j"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "keep = 1/2*(I0(3)+np.dot(Sz(0,3),Sz(2,3)))\n",
+    "pd.DataFrame(keep+swap)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def Exchange(i,j,L):\n",
+    "    change = 1/2*(I0(L)-np.dot(Sz(i,L),Sz(j,L)))\n",
+    "    keep = 1/2*(I0(L)+np.dot(Sz(i,L),Sz(j,L)))\n",
+    "    flip = np.dot(Sx(i,L),Sx(j,L))\n",
+    "    swap = np.dot(flip,change)\n",
+    "    return keep+swap\n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#Translation Operator\n",
+    "def T(L):\n",
+    "    t = I0(L)\n",
+    "    for i in range(0,L-1):\n",
+    "        exc = Exchange(L-2-i,L-1-i,L)\n",
+    "        t = np.dot(exc,t)\n",
+    "    return t"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Below I do a bunch of tests of the translation operator"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>3.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>3.0+0.0j</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         0         1         2         3         4         5         6  \\\n",
+       "0 3.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j   \n",
+       "1 0.0+0.0j -1.0+0.0j  2.0+0.0j  0.0+0.0j  2.0+0.0j  0.0+0.0j  0.0+0.0j   \n",
+       "2 0.0+0.0j  2.0+0.0j -1.0+0.0j  0.0+0.0j  2.0+0.0j  0.0+0.0j  0.0+0.0j   \n",
+       "3 0.0+0.0j  0.0+0.0j  0.0+0.0j -1.0+0.0j  0.0+0.0j  2.0+0.0j  2.0+0.0j   \n",
+       "4 0.0+0.0j  2.0+0.0j  2.0+0.0j  0.0+0.0j -1.0+0.0j  0.0+0.0j  0.0+0.0j   \n",
+       "5 0.0+0.0j  0.0+0.0j  0.0+0.0j  2.0+0.0j  0.0+0.0j -1.0+0.0j  2.0+0.0j   \n",
+       "6 0.0+0.0j  0.0+0.0j  0.0+0.0j  2.0+0.0j  0.0+0.0j  2.0+0.0j -1.0+0.0j   \n",
+       "7 0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j   \n",
+       "\n",
+       "         7  \n",
+       "0 0.0+0.0j  \n",
+       "1 0.0+0.0j  \n",
+       "2 0.0+0.0j  \n",
+       "3 0.0+0.0j  \n",
+       "4 0.0+0.0j  \n",
+       "5 0.0+0.0j  \n",
+       "6 0.0+0.0j  \n",
+       "7 3.0+0.0j  "
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.DataFrame(H(1,1,1,3))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>3.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>2.0+0.0j</td>\n",
+       "      <td>-1.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>3.0+0.0j</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         0         1         2         3         4         5         6  \\\n",
+       "0 3.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j   \n",
+       "1 0.0+0.0j -1.0+0.0j  2.0+0.0j  0.0+0.0j  2.0+0.0j  0.0+0.0j  0.0+0.0j   \n",
+       "2 0.0+0.0j  2.0+0.0j -1.0+0.0j  0.0+0.0j  2.0+0.0j  0.0+0.0j  0.0+0.0j   \n",
+       "3 0.0+0.0j  0.0+0.0j  0.0+0.0j -1.0+0.0j  0.0+0.0j  2.0+0.0j  2.0+0.0j   \n",
+       "4 0.0+0.0j  2.0+0.0j  2.0+0.0j  0.0+0.0j -1.0+0.0j  0.0+0.0j  0.0+0.0j   \n",
+       "5 0.0+0.0j  0.0+0.0j  0.0+0.0j  2.0+0.0j  0.0+0.0j -1.0+0.0j  2.0+0.0j   \n",
+       "6 0.0+0.0j  0.0+0.0j  0.0+0.0j  2.0+0.0j  0.0+0.0j  2.0+0.0j -1.0+0.0j   \n",
+       "7 0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j  0.0+0.0j   \n",
+       "\n",
+       "         7  \n",
+       "0 0.0+0.0j  \n",
+       "1 0.0+0.0j  \n",
+       "2 0.0+0.0j  \n",
+       "3 0.0+0.0j  \n",
+       "4 0.0+0.0j  \n",
+       "5 0.0+0.0j  \n",
+       "6 0.0+0.0j  \n",
+       "7 3.0+0.0j  "
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.DataFrame(np.dot(T(3),np.dot(H(1,1,1,3),np.transpose(T(3)))))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j]])"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "H(1,1,1,3)-np.dot(T(3),np.dot(H(1,1,1,3),np.transpose(T(3))))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([111.+0.j, 121.+0.j, 211.+0.j, 221.+0.j, 112.+0.j, 122.+0.j,\n",
+       "       212.+0.j, 222.+0.j])"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.dot(T(3),np.array([111,112,121,122,211,212,221,222]))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j]])"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.dot(np.dot(T(3),Sz(0,3)),np.transpose(T(3)))-Sz(1,3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j]])"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.dot(np.dot(T(3),Sz(1,3)),np.transpose(T(3)))-Sz(2,3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j]])"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.dot(np.dot(T(3),Sz(2,3)),np.transpose(T(3)))-Sz(0,3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j]])"
+      ]
+     },
+     "execution_count": 21,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.dot(np.dot(T(3),Sx(0,3)),np.transpose(T(3)))-Sx(1,3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j]])"
+      ]
+     },
+     "execution_count": 22,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.dot(T(3),np.dot(T(3),T(3)))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j]])"
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.dot(T(3),H(1,1,1,3))-np.dot(H(1,1,1,3),T(3))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Now let us take a look at constructing eigenstates of T"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "psi_a = qi.Statevector.from_label(\"000\").data\n",
+    "psi_b = qi.Statevector.from_label(\"100\").data\n",
+    "psi_c = qi.Statevector.from_label(\"110\").data\n",
+    "psi_d = qi.Statevector.from_label(\"111\").data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def bkt(psi_a,psi_b):\n",
+    "    return np.dot(np.conjugate(psi_a),psi_b)\n",
+    "\n",
+    "def psi_k(psi,m,L):\n",
+    "    k = m*2*np.pi/(L)\n",
+    "    psi_l = [psi]\n",
+    "    for r in range(1,L):\n",
+    "        psi_l.append(np.exp(-1j*k)*np.dot(T(L),psi_l[r-1])) \n",
+    "    psi_out = sum(psi_l)\n",
+    "    psi_out = psi_out/np.sqrt(bkt(psi_out,psi_out)+10**(-10)*1j)  #I use +10**(-10)*1j to avoid dividing by zero\n",
+    "    return psi_out"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j])"
+      ]
+     },
+     "execution_count": 26,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "m=0\n",
+    "L=3\n",
+    "psi = psi_d\n",
+    "np.exp(-1j*m*2*np.pi/(L))*np.dot(T(3),psi_k(psi,m,L))-psi_k(psi,m,L)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(1.0000000000000002+0j)\n"
+     ]
+    }
+   ],
+   "source": [
+    "print( bkt(psi_k(psi_b,1,3),psi_k(psi_b,1,3)) ) "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(2.220446049250313e-16-2.220446049250313e-16j)\n",
+      "[ 0.        +0.00000000e+00j -0.28867513-5.00000000e-01j\n",
+      " -0.28867513+5.00000000e-01j  0.        +0.00000000e+00j\n",
+      "  0.57735027-9.62250449e-12j  0.        +0.00000000e+00j\n",
+      "  0.        +0.00000000e+00j  0.        +0.00000000e+00j]\n",
+      "[ 0.        +0.00000000e+00j -0.28867513+5.00000000e-01j\n",
+      " -0.28867513-5.00000000e-01j  0.        +0.00000000e+00j\n",
+      "  0.57735027-9.62250449e-12j  0.        +0.00000000e+00j\n",
+      "  0.        +0.00000000e+00j  0.        +0.00000000e+00j]\n"
+     ]
+    }
+   ],
+   "source": [
+    "print( bkt(psi_k(psi_b,-1,3),psi_k(psi_b,1,3)) ) \n",
+    "print(psi_k(psi_b,-1,3))\n",
+    "print(psi_k(psi_b,1,3))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(2.220446049250313e-16-2.220446049250313e-16j)\n",
+      "(-5.551115122964224e-17-1.1102230246332345e-16j)\n",
+      "0j\n",
+      "0j\n",
+      "(2.220446049250313e-16-2.220446049250313e-16j)\n",
+      "(-5.5511151229579464e-17-1.1056263373709945e-16j)\n",
+      "0j\n"
+     ]
+    }
+   ],
+   "source": [
+    "print( bkt(psi_k(psi_b,-1,3),psi_k(psi_b,1,3)) ) \n",
+    "print( bkt(psi_k(psi_b,0,3),psi_k(psi_b,1,3)) ) \n",
+    "print( bkt(psi_k(psi_a,0,3),psi_k(psi_b,1,3)) ) \n",
+    "print( bkt(psi_k(psi_c,1,3),psi_k(psi_b,1,3)) )\n",
+    "print( bkt(psi_k(psi_c,-1,3),psi_k(psi_c,1,3)) )\n",
+    "print( bkt(psi_k(psi_c,0,3),psi_k(psi_c,1,3)) )\n",
+    "print( bkt(psi_k(psi_d,0,3),psi_k(psi_b,1,3)) ) "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "There is a state for each occupancy number. \n",
+    "\n",
+    "### Now let's try to write the Hamiltonian"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import scipy.linalg as lng"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ 2.82822021+0.j,  4.57177979+0.j, -3.7       +0.j,  4.57177979+0.j,\n",
+       "        2.82822021+0.j, -3.7       +0.j, -3.7       +0.j, -3.7       +0.j])"
+      ]
+     },
+     "execution_count": 35,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "H3 = H(1,1.2,1.5,3)\n",
+    "\n",
+    "(e3, psi3) = lng.eig(H3)\n",
+    "e3"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def exv(psi_a,O,psi_b):\n",
+    "    return np.dot(np.conjugate(psi_a),np.dot(O,psi_b))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "psi_occ = [psi_a,psi_b,psi_c,psi_d]\n",
+    "\n",
+    "def Ok(O,m):\n",
+    "    Oc = []\n",
+    "    for i in range(0,len(psi_occ)):\n",
+    "        Or = []\n",
+    "        for j in range(0,len(psi_occ)):\n",
+    "            psi_i = psi_k(psi_occ[i],m,L)\n",
+    "            psi_j = psi_k(psi_occ[j],m,L)\n",
+    "            if max(np.abs(psi_i)) > 10**(-8) and max(np.abs(psi_j)) > 10**(-8):\n",
+    "                oij = exv(psi_i,O,psi_j)\n",
+    "                Or.append(oij)\n",
+    "        if len(Or) > 0:\n",
+    "            Oc.append(Or)\n",
+    "    return np.array(Oc)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Check Eigenvalues"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "(ek0,psi_k0) = lng.eig(Ok(H3,0))\n",
+    "(ek1,psi_k1) = lng.eig(Ok(H3,1))\n",
+    "(ek2,psi_k2) = lng.eig(Ok(H3,2))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 39,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[2.82822021+0.j 4.57177979+0.j 4.57177979+0.j 2.82822021+0.j]\n",
+      "[-3.7-1.11022302e-16j -3.7-1.31398730e-17j]\n",
+      "[-3.7+0.00000000e+00j -3.7-2.62062492e-17j]\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(ek0)\n",
+    "print(ek1)\n",
+    "print(ek2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 40,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ 2.82822021+0.j,  4.57177979+0.j, -3.7       +0.j,  4.57177979+0.j,\n",
+       "        2.82822021+0.j, -3.7       +0.j, -3.7       +0.j, -3.7       +0.j])"
+      ]
+     },
+     "execution_count": 40,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "e3"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 41,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>3.0+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-0.5+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>4.4+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-0.5-0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>-0.5-0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>4.4+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>-0.5+0.0j</td>\n",
+       "      <td>0.0+0.0j</td>\n",
+       "      <td>3.0+0.0j</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "          0         1         2         3\n",
+       "0  3.0+0.0j  0.0+0.0j -0.5+0.0j  0.0+0.0j\n",
+       "1  0.0+0.0j  4.4+0.0j  0.0+0.0j -0.5-0.0j\n",
+       "2 -0.5-0.0j  0.0+0.0j  4.4+0.0j  0.0+0.0j\n",
+       "3  0.0+0.0j -0.5+0.0j  0.0+0.0j  3.0+0.0j"
+      ]
+     },
+     "execution_count": 41,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.DataFrame(Ok(H3,0))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Notice that parity is perserved\n",
+    "\n",
+    "## Next let us try to include parity in our decomposition"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 42,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#Construct the parity operator\n",
+    "\n",
+    "def P(L):\n",
+    "    p = I0(L)\n",
+    "    for i in range(0,L):\n",
+    "        p = np.dot(Sz(i,L),p)\n",
+    "    return p"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 43,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[ 1.+0.j,  0.+0.j,  0.+0.j,  0.+0.j],\n",
+       "       [ 0.+0.j, -1.+0.j,  0.+0.j,  0.+0.j],\n",
+       "       [ 0.+0.j,  0.+0.j, -1.+0.j,  0.+0.j],\n",
+       "       [ 0.+0.j,  0.+0.j,  0.+0.j,  1.+0.j]])"
+      ]
+     },
+     "execution_count": 43,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "P(2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 44,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(1+0j)\n",
+      "(-1+0j)\n",
+      "(1+0j)\n",
+      "(-1+0j)\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(exv(psi_a,P(3),psi_a))\n",
+    "print(exv(psi_b,P(3),psi_b))\n",
+    "print(exv(psi_c,P(3),psi_c))\n",
+    "print(exv(psi_d,P(3),psi_d))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Special case when $k = 0, \\pi$\n",
+    "\n",
+    "In this case we can use $|a(k,p)> = \\frac{1}{N}\\sum_{r=0}^{L-1}e^{-ikr}T^r(1+pP)|a>$"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 45,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def Mdot(Ol):\n",
+    "    m = Ol[0]\n",
+    "    for i in range(1,len(Ol)):\n",
+    "        m = np.dot(Ol[i],m)\n",
+    "    return m\n",
+    "\n",
+    "def psi_kp(psi,m,p,L):\n",
+    "    k = m*2*np.pi/(L)\n",
+    "    psi_l = [Mdot([I0(L)+p*P(L),psi])]\n",
+    "    for r in range(1,L):\n",
+    "        psi_l.append(np.exp(-1j*k)*Mdot([T(L),psi_l[r-1]])) \n",
+    "    psi_out = sum(psi_l)\n",
+    "    psi_out = psi_out/np.sqrt(bkt(psi_out,psi_out)+10**(-10)*1j)  #I use +10**(-10)*1j to avoid dividing by zero\n",
+    "    return psi_out    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 46,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j])"
+      ]
+     },
+     "execution_count": 46,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "p = -1\n",
+    "n = 1\n",
+    "psi  = psi_b\n",
+    "Mdot([P(3),psi_kp(psi,n,p,3)])-p*psi_kp(psi,n,p,3)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The above representation is not supposed to work for $n \\neq 0,\\pi$, however, it seems to work for me.  Perhaps this is something special with L=3.  The problem is supposed to be that $P |a(k,p)> = p |a(-k,p)>$"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 47,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j]])"
+      ]
+     },
+     "execution_count": 47,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Mdot([P(L),T(L)])-Mdot([T(L),P(L)])  #This is not supposed to be true.  It seems they are calling reflection symmetary parity "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Reflection symmetary"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 48,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def R(L):\n",
+    "    r = I0(L)\n",
+    "    for i in range(0,int(L/2)):\n",
+    "        exc = Exchange(i,L-1-i,L)\n",
+    "        r = np.dot(exc,r)\n",
+    "    return r\n",
+    "        "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],\n",
+       "       [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j]])"
+      ]
+     },
+     "execution_count": 49,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Mdot([R(L),T(L)])-Mdot([lng.inv(T(L)),R(L)])  #This makes since.  In the papaer, R is called P"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Special case when 𝑘=0,𝜋\n",
+    "\n",
+    "In this case we can use |𝑎(𝑘,𝑝)>=1𝑁∑𝐿−1𝑟=0𝑒−𝑖𝑘𝑟𝑇𝑟(1+𝑝𝑃)|𝑎>"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 50,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def psi_kp(psi,m,p,L):\n",
+    "    k = m*2*np.pi/(L)\n",
+    "    psi_l = [Mdot([I0(L)+p*R(L),psi])]\n",
+    "    for r in range(1,L):\n",
+    "        psi_l.append(np.exp(-1j*k)*Mdot([T(L),psi_l[r-1]])) \n",
+    "    psi_out = sum(psi_l)\n",
+    "    psi_out = psi_out/np.sqrt(bkt(psi_out,psi_out)+10**(-10)*1j)  #I use +10**(-10)*1j to avoid dividing by zero\n",
+    "    return psi_out   "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 51,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ 0.00000000e+00+0.00000000e+00j,  0.00000000e+00+0.00000000e+00j,\n",
+       "        0.00000000e+00+0.00000000e+00j,  3.33066907e-16-2.22044605e-16j,\n",
+       "        0.00000000e+00+0.00000000e+00j,  0.00000000e+00-3.84592537e-16j,\n",
+       "       -3.33066907e-16-1.66533454e-16j,  0.00000000e+00+0.00000000e+00j])"
+      ]
+     },
+     "execution_count": 51,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "p = 1\n",
+    "n = 1\n",
+    "psi  = psi_c\n",
+    "Mdot([R(3),psi_kp(psi,n,p,3)])-p*psi_kp(psi,-n,p,3)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Okay now we have the expected results.  We have $R|𝑎(𝑘,𝑝)> = p |𝑎(-𝑘,𝑝)>$ as long as $k = \\frac{2 n \\pi}{L}$"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Semi-momentum states\n",
+    "\n",
+    "instead of $e^{i k r}$ we use $\\cos(k r)$ or $\\sin(k r)$"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 52,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def Ck(s,k):\n",
+    "    if s == 1:\n",
+    "        ck = np.cos(k)\n",
+    "    elif s == -1:\n",
+    "        ck = np.sin(k)\n",
+    "    else:\n",
+    "        raise Exception(\"s must be +1 or -1\")\n",
+    "    return ck\n",
+    "    \n",
+    "\n",
+    "def psi_sk(psi,s,m,L):\n",
+    "    k = m*2*np.pi/(L)\n",
+    "    psi_l = [psi]\n",
+    "    for r in range(1,L):\n",
+    "        psi_l.append(Mdot([T(L),psi_l[r-1]])) \n",
+    "    for r in range(0,L):\n",
+    "        psi_l[r] = Ck(s,k*r)*psi_l[r]\n",
+    "    #Normalizing\n",
+    "    psi_out = sum(psi_l)\n",
+    "    psi_out = psi_out/np.sqrt(bkt(psi_out,psi_out)+10**(-10)*1j)  #I use +10**(-10)*1j to avoid dividing by zero\n",
+    "    return psi_out   "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 53,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(8.333611578592581e-12-4.811429032969272e-12j)"
+      ]
+     },
+     "execution_count": 53,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "n=1\n",
+    "np.amax(psi_k(psi_c,n,3)-(psi_sk(psi_c,1,n,3)+1j*psi_sk(psi_c,-1,n,3))/np.sqrt(2))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 54,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(2.7755575615628914e-16-3.2311742677852644e-27j)"
+      ]
+     },
+     "execution_count": 54,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "bkt(psi_sk(psi_c,1,n,3),psi_sk(psi_c,-1,n,3))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Semi-momentum with reflection"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 55,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def psi_skp(psi,s,m,p,L):\n",
+    "    k = m*2*np.pi/(L)\n",
+    "    psi_l = [psi]\n",
+    "    for r in range(1,L):\n",
+    "        psi_l.append(Mdot([T(L),psi_l[r-1]])) \n",
+    "    for r in range(0,L):\n",
+    "        psi_l[r] = Ck(s,k*r)*Mdot([I0(3)+p*R(L),psi_l[r]])\n",
+    "    #Normalizing\n",
+    "    psi_out = sum(psi_l)\n",
+    "    psi_out = psi_out/np.sqrt(bkt(psi_out,psi_out)+10**(-10)*1j)  #I use +10**(-10)*1j to avoid dividing by zero\n",
+    "    return psi_out  "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 56,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j])"
+      ]
+     },
+     "execution_count": 56,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "s = -1\n",
+    "n = 1\n",
+    "p = -1\n",
+    "\n",
+    "\n",
+    "Mdot([R(3),psi_skp(psi_c,s,n,p,3)])-p*psi_skp(psi_c,s,n,p,3)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "These are eigenstates of parity.  Notice that sates with different s are not orthogonal and states with opposite n are not orthogonal"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 57,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(1+2.222222222222225e-11j)\n",
+      "(-1.0000000000000002+0j)\n",
+      "0j\n",
+      "0j\n",
+      "0j\n"
+     ]
+    }
+   ],
+   "source": [
+    "print( bkt(psi_skp(psi_c,s,n,p,3),psi_skp(psi_c,-s,n,p,3)) )\n",
+    "print( bkt(psi_skp(psi_c,s,n,p,3),psi_skp(psi_c,s,-n,p,3)) )\n",
+    "print( bkt(psi_skp(psi_c,s,n,p,3),psi_skp(psi_c,s,n,-p,3)) )\n",
+    "\n",
+    "print( bkt(psi_skp(psi_c,s,0,p,3),psi_skp(psi_c,s,1,p,3)) )\n",
+    "print( bkt(psi_skp(psi_c,s,0,p,3),psi_skp(psi_c,s,1,-p,3)) )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's try to build the basis"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 58,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0 0 1\n",
+      "1 0 1\n",
+      "1 1 1\n",
+      "1 1 -1\n",
+      "4 0 1\n",
+      "4 1 1\n",
+      "4 1 -1\n",
+      "7 0 1\n"
+     ]
+    }
+   ],
+   "source": [
+    "psi_a = qi.Statevector.from_label(\"000\").data\n",
+    "psi_b1 = qi.Statevector.from_label(\"100\").data\n",
+    "psi_b2 = qi.Statevector.from_label(\"010\").data\n",
+    "psi_b3 = qi.Statevector.from_label(\"001\").data\n",
+    "psi_c1 = qi.Statevector.from_label(\"110\").data\n",
+    "psi_c2 = qi.Statevector.from_label(\"101\").data\n",
+    "psi_c3 = qi.Statevector.from_label(\"011\").data\n",
+    "psi_d = qi.Statevector.from_label(\"111\").data\n",
+    "\n",
+    "psi_all = [psi_a,psi_b1,psi_b2,psi_b3,psi_c1,psi_c2,psi_c3,psi_d]\n",
+    "\n",
+    "\n",
+    "s = 1\n",
+    "psi_sem = []\n",
+    "for n in range(0,len(psi_all)):\n",
+    "    for m in range(0,2):\n",
+    "        for pi in range(0,2):\n",
+    "            p = 1 - 2*pi\n",
+    "            psi_tst = psi_skp(psi_all[n],s,m,p,3)\n",
+    "            tst = 0\n",
+    "            for i in range(0,len(psi_sem)):\n",
+    "                tst += bkt(psi_tst,psi_sem[i])\n",
+    "            if np.abs(tst) < 10**(-10) and np.abs(np.amax(psi_tst)) > 10**(-10):\n",
+    "                print(n,m,p)\n",
+    "                psi_sem.append(psi_tst)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 59,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "8"
+      ]
+     },
+     "execution_count": 59,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(psi_sem)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Spin\n",
+    "\n",
+    "what I originally called parity they call Z"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 60,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def Z(L):\n",
+    "    z = I0(L)\n",
+    "    for i in range(0,L):\n",
+    "        z = np.dot(Sz(i,L),z)\n",
+    "    return z"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 61,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def psi_kz(psi,m,z,L):\n",
+    "    k = m*2*np.pi/(L)\n",
+    "    psi_l = [Mdot([I0(L)+z*Z(L),psi])]\n",
+    "    for r in range(1,L):\n",
+    "        psi_l.append(np.exp(-1j*k)*Mdot([T(L),psi_l[r-1]])) \n",
+    "    psi_out = sum(psi_l)\n",
+    "    psi_out = psi_out/np.sqrt(bkt(psi_out,psi_out)+10**(-10)*1j)  #I use +10**(-10)*1j to avoid dividing by zero\n",
+    "    return psi_out    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 65,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j])"
+      ]
+     },
+     "execution_count": 65,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "n = 1\n",
+    "z = -1\n",
+    "psi = psi_b\n",
+    "Mdot([Z(3),psi_kz(psi,n,z,3)])+psi_kz(psi,n,z,3)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Now we can put it all together"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 67,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def psi_skpz(psi,s,m,p,z,L):\n",
+    "    k = m*2*np.pi/(L)\n",
+    "    psi_l = [psi]\n",
+    "    for r in range(1,L):\n",
+    "        psi_l.append(Mdot([T(L),psi_l[r-1]])) \n",
+    "    for r in range(0,L):\n",
+    "        psi_l[r] = Ck(s,k*r)*Mdot([I0(3)+p*R(L),I0(L)+z*Z(L),psi_l[r]])\n",
+    "    #Normalizing\n",
+    "    psi_out = sum(psi_l)\n",
+    "    psi_out = psi_out/np.sqrt(bkt(psi_out,psi_out)+10**(-10)*1j)  #I use +10**(-10)*1j to avoid dividing by zero\n",
+    "    return psi_out  "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 73,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[ 0.        +0.0000000e+00j -0.70710678+1.9641855e-12j\n",
+      "  0.        +0.0000000e+00j  0.        +0.0000000e+00j\n",
+      "  0.70710678-1.9641855e-12j  0.        +0.0000000e+00j\n",
+      "  0.        +0.0000000e+00j  0.        +0.0000000e+00j]\n",
+      "[0.+0.j 0.+0.j 0.+0.j 0.+0.j 0.+0.j 0.+0.j 0.+0.j 0.+0.j]\n",
+      "[0.+0.j 0.+0.j 0.+0.j 0.+0.j 0.+0.j 0.+0.j 0.+0.j 0.+0.j]\n"
+     ]
+    }
+   ],
+   "source": [
+    "s = 1\n",
+    "n = 1\n",
+    "p = -1\n",
+    "z = -1\n",
+    "psi = psi_b\n",
+    "\n",
+    "print(psi_skpz(psi_b,s,n,p,z,3))\n",
+    "print(Mdot([Z(3),psi_skpz(psi_b,s,n,p,z,3)])-z*psi_skpz(psi_b,s,n,p,z,3))\n",
+    "print(Mdot([R(3),psi_skpz(psi_b,s,n,p,z,3)])-p*psi_skpz(psi_b,s,n,p,z,3))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "These are eigenstates of R and Z"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python [conda env:qiskit20_new]",
+   "language": "python",
+   "name": "conda-env-qiskit20_new-py"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

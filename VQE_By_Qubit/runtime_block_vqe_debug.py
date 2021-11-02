@@ -184,13 +184,14 @@ def E_off_block(backend,phi_a,phi_b,block,method = 'simple'):
     return E
 
 ##total energy##
-def find_E(backend,alpha,phi,blocks,method = 'simple'):
+def find_E(backend,user_messenger,alpha,phi,blocks,method = 'simple'):
     E = 0
     for key in list(blocks.keys()):
         if key[0] == key[2]:
             E += alpha[int(key[0])]*alpha[int(key[2])]*E_on_block(backend,phi[int(key[0])],blocks[key],method = method)
         else:
             E += 2*alpha[int(key[0])]*alpha[int(key[2])]*E_off_block(backend,phi[int(key[0])],phi[int(key[2])],blocks[key],method = method)
+        user_messenger.publish({'key':key,'E':E})
     return E
 
 
@@ -213,11 +214,8 @@ c_a = 0.4
 
 
 
-def SPSA(backend, user_messenger, k_max, phi, alpha, blocks, method = 'simple',hold = False, seeded = False):
+def SPSA(backend, user_messenger, k_max, phi, alpha, blocks, method = 'simple',hold = False):
     #Initalization
-    if seeded: 
-        user_messenger.publish({'seeding is on':seeded})
-        np.random.seed(0)
     k = 0
     phi_k = np.array(phi)
     alpha_k = np.array(alpha)
@@ -295,14 +293,35 @@ def SPSA(backend, user_messenger, k_max, phi, alpha, blocks, method = 'simple',h
 
 
 ####### Main ########
+def main0(backend, user_messenger, **kwargs):
+    k_max = kwargs.pop('k_max', 10)
+    phi = kwargs.pop('phi')
+    alpha = kwargs.pop('alpha')
+    blocks = kwargs.pop('blocks')
+    block = blocks['0,1']
+    p_label = 'X' +block[0].primitive.to_label()
+    Q = len(phi[0][0])
+    Q = len(phi[0][0])
+    qr = QuantumRegister(Q+1)
+    cr = ClassicalRegister(Q+1)
+    cir = QuantumCircuit(qr , cr)
+    psi = U_off(cir,phi[0],phi[1])
+    out = measure_pauli(backend,p_label,psi,method = 'quantum')
+    #user_messenger.publish({"Starting program with k_max": k_max})
+    #out = SPSA(backend, user_messenger, k_max, phi, alpha, blocks, method = 'quantum', hold = True)
+    return out
+
+
+####### Main ########
 def main(backend, user_messenger, **kwargs):
     k_max = kwargs.pop('k_max', 10)
     phi = kwargs.pop('phi')
     alpha = kwargs.pop('alpha')
     blocks = kwargs.pop('blocks')
-    seeded = kwargs.pop('seeded',False)
-    method = kwargs.pop('method','quantum')
-    user_messenger.publish({"Starting program with k_max": k_max})
-    out = SPSA(backend, user_messenger, k_max, phi, alpha, blocks, method = method, hold = True, seeded = seeded)
+    block = blocks['0,1']
+    #out = E_off_block(backend,phi[0],phi[1],block,method = 'quantum')
+    out = find_E(backend,user_messenger,alpha,phi,blocks,method = 'quantum')
+    #user_messenger.publish({"Starting program with k_max": k_max})
+    #out = SPSA(backend, user_messenger, k_max, phi, alpha, blocks, method = 'quantum', hold = True)
     return out
 

@@ -56,14 +56,14 @@ def givens(ri,rj,c,F):
         phiz = 0
         phi = 0
     elif F[ri,c] == 0:
-        phiz = 1j*np.log( F[rj,c]/np.abs(F[rj,c]) )
+        phiz = 1j*np.log( F[rj,c]/np.abs(F[rj,c]) ,dtype = 'complex')
         Fz =  Mdot([rz(rj,phiz,N) , F])
         phi = np.pi/2
         F_new = Mdot([ry(ri,rj,phi,N) , Fz])
     else:
-        phiz = 1j*np.log( F[rj,c]/F[ri,c] * np.abs(F[ri,c])/np.abs(F[rj,c]) )
+        phiz = 1j*np.log( F[rj,c]/F[ri,c] * np.abs(F[ri,c])/np.abs(F[rj,c]) ,dtype = 'complex')
         Fz =  Mdot([rz(rj,phiz,N) , F])
-        phi = np.arctan(Fz[rj,c]/Fz[ri,c])
+        phi = np.arctan(Fz[rj,c]/Fz[ri,c] ,dtype = 'complex')
         F_new = Mdot([ry(ri,rj,phi,N) , Fz])
     return F_new,phiz,phi
 

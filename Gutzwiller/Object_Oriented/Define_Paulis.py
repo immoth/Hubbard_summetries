@@ -1,50 +1,63 @@
 
 import qiskit.quantum_info as qi
+import numpy as np
+
+i0 = np.array([[1,0],[0,1]])
+x0 = np.array([[0,1],[1,0]])
+y0 = np.array([[0,-1j],[1j,0]])
+z0 = np.array([[1,0],[0,-1]])
 
 def I(N):
-    label = ['I' for i in range(N)]
-    label = ''.join(label)
-    return qi.Operator.from_label(label).data
+    out = 1
+    for i in range(N):
+        out = np.kron(i0,out)
+    return out
 
 def X(i,N):
-    label = ['I' for i in range(N)]
-    label[N-1-i] = 'X'
-    label = ''.join(label)
-    return qi.Operator.from_label(label).data
+    out = 1
+    for j in range(i):
+        out = np.kron(i0,out)
+    out = np.kron(x0,out)
+    for j in range(i+1,N):
+        out = np.kron(i0,out)
+    return out
 
 def Y(i,N):
-    label = ['I' for i in range(N)]
-    label[N-1-i] = 'Y'
-    label = ''.join(label)
-    return qi.Operator.from_label(label).data
+    out = 1
+    for j in range(i):
+        out = np.kron(i0,out)
+    out = np.kron(y0,out)
+    for j in range(i+1,N):
+        out = np.kron(i0,out)
+    return out
 
 def Z(i,N):
-    label = ['I' for i in range(N)]
-    label[N-1-i] = 'Z'
-    label = ''.join(label)
-    return qi.Operator.from_label(label).data
+    out = 1
+    for j in range(i):
+        out = np.kron(i0,out)
+    out = np.kron(z0,out)
+    for j in range(i+1,N):
+        out = np.kron(i0,out)
+    return out
 
 def c(i,N):
-    label_1 = ['Z' for j in range(N-i-1)]
-    label_2 = ['I' for j in range(N-i,N)]
-    label_x = label_1 + ['X'] + label_2
-    label_y = label_1 + ['Y'] + label_2
-    label_x = ''.join(label_x)
-    label_y = ''.join(label_y)
-    x = qi.Operator.from_label(label_x).data
-    y = qi.Operator.from_label(label_y).data
-    return 1/2*(x+1j*y)
+    out = 1
+    for j in range(i):
+        out = np.kron(i0,out)
+    out = 1/2*np.kron(x0 + 1j*y0, out)
+    for j in range(i+1,N):
+        out = np.kron(z0,out)
+    return out
 
 def cd(i,N):
-    label_1 = ['Z' for j in range(N-i-1)]
-    label_2 = ['I' for j in range(N-i,N)]
-    label_x = label_1 + ['X'] + label_2
-    label_y = label_1 + ['Y'] + label_2
-    label_x = ''.join(label_x)
-    label_y = ''.join(label_y)
-    x = qi.Operator.from_label(label_x).data
-    y = qi.Operator.from_label(label_y).data
-    return 1/2*(x-1j*y)
+    out = 1
+    for j in range(i):
+        out = np.kron(i0,out)
+    out = 1/2*np.kron(x0 - 1j*y0, out)
+    for j in range(i+1,N):
+        out = np.kron(z0,out)
+    return out
+
 
 def n(i,N):
     return Mdot([cd(i,N),c(i,N)])

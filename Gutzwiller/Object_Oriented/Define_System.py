@@ -15,46 +15,57 @@ class system:
             raise Exception('lattice must be on of: ' + str(self.lattice_types))
         
         if self.lattice == 'square':
-            if self.N != 4:
-                raise Exception('I have only defined the square lattices for 4 sites')
+            if self.N not in [4,8]:
+                raise Exception('I have only defined the square lattices for 4 sites and 8 sites')
         
         if self.lattice == 'triangle':
             if self.N != 4:
                 raise Exception('I have only defined the triangle lattices for 4 sites')
-            
-    def K(self,k):
-        if self.lattice == 'square':
-            N=4
-            Kout = 0*I(2*N)
-            for i in range(0,N-1):
-                Kout = Kout + Mdot([cd(i,2*N),c(i+1,2*N)]) + Mdot([cd(i+1,2*N),c(i,2*N)])
-                Kout = Kout + Mdot([cd(i+N,2*N),c(i+1+N,2*N)]) + Mdot([cd(i+1+N,2*N),c(i+N,2*N)])
-            Kout = Kout + Mdot([cd(0,2*N),c(N-1,2*N)]) + Mdot([cd(N-1,2*N),c(0,2*N)])
-            Kout = Kout + Mdot([cd(0+N,2*N),c(N-1+N,2*N)]) + Mdot([cd(N-1+N,2*N),c(0+N,2*N)])
-            return k*Kout
-        if self.lattice == 'triangle':
-            Kout = 0*I(8)
-            Kout = Kout + Mdot([cd(0,8),c(1,8)]) + Mdot([cd(0,8),c(2,8)])+ Mdot([cd(0,8),c(3,8)])
-            Kout = Kout + Mdot([cd(1,8),c(0,8)]) + Mdot([cd(1,8),c(2,8)])+ Mdot([cd(1,8),c(3,8)])
-            Kout = Kout + Mdot([cd(2,8),c(0,8)]) + Mdot([cd(2,8),c(1,8)])+ Mdot([cd(2,8),c(3,8)])
-            Kout = Kout + Mdot([cd(3,8),c(0,8)]) + Mdot([cd(3,8),c(1,8)])+ Mdot([cd(3,8),c(2,8)])
-            N=4
-            Kout = Kout + Mdot([cd(N+0,8),c(N+1,8)]) + Mdot([cd(N+0,8),c(N+2,8)])+ Mdot([cd(N+0,8),c(N+3,8)])
-            Kout = Kout + Mdot([cd(N+1,8),c(N+0,8)]) + Mdot([cd(N+1,8),c(N+2,8)])+ Mdot([cd(N+1,8),c(N+3,8)])
-            Kout = Kout + Mdot([cd(N+2,8),c(N+0,8)]) + Mdot([cd(N+2,8),c(N+1,8)])+ Mdot([cd(N+2,8),c(N+3,8)])
-            Kout = Kout + Mdot([cd(N+3,8),c(N+0,8)]) + Mdot([cd(N+3,8),c(N+1,8)])+ Mdot([cd(N+3,8),c(N+2,8)])
-            return k*Kout
+    
+    def neighbors(self):
         if self.lattice == 'line':
-            N=self.N
-            Kout = 0*I(2*N)
-            for i in range(0,N-1):
-                Kout = Kout + Mdot([cd(i,2*N),c(i+1,2*N)]) + Mdot([cd(i+1,2*N),c(i,2*N)])
-                Kout = Kout + Mdot([cd(i+N,2*N),c(i+1+N,2*N)]) + Mdot([cd(i+1+N,2*N),c(i+N,2*N)])
-            Kout = Kout + Mdot([cd(0,2*N),c(N-1,2*N)]) + Mdot([cd(N-1,2*N),c(0,2*N)])
-            Kout = Kout + Mdot([cd(0+N,2*N),c(N-1+N,2*N)]) + Mdot([cd(N-1+N,2*N),c(0+N,2*N)])
-            return k*Kout
-        else:
-            return None
+            N = self.N
+            nbrs = []
+            for i in range(N-1):
+                nbrs.append([i,i+1])
+                nbrs.append([i+1,i])
+            nbrs.append([N-1,0])
+            nbrs.append([0,N-1])
+            return nbrs
+        if self.lattice == 'square':
+            if self.N == 4:
+                nbrs = [[0,1],[1,2],[2,3],[0,3],
+                        [1,0],[2,1],[3,2],[3,0]]
+                return nbrs
+            if self.N == 8:
+                nbrs = [[0,1],[0,3],[0,4],[0,6],
+                        [1,0],[1,2],[1,5],[1,7],
+                        [2,1],[2,3],[2,4],[2,6],
+                        [3,0],[3,2],[3,5],[3,7],
+                        [4,0],[4,2],[4,5],[4,7],
+                        [5,1],[5,3],[5,4],[5,6],
+                        [6,0],[6,2],[6,5],[6,7],
+                        [7,1],[7,3],[7,4],[7,6]]
+                return nbrs
+        if self.lattice == 'triangle':
+            nbrs = [[0,1],[0,2],[0,3],
+                    [1,0],[1,2],[1,3],
+                    [2,0],[2,1],[2,3],
+                    [3,0],[3,1],[3,2]]
+            return nbrs
+        return None
+    
+    def K(self,k):
+        nbrs = self.neighbors()
+        N = self.N
+        Kout = 0*I(2*N)
+        for pair in nbrs:
+            i = pair[0]
+            j = pair[1]
+            Kout = Kout + k*Mdot([cd(i,2*N),c(j,2*N)])
+            Kout = Kout + k*Mdot([cd(i+N,2*N),c(j+N,2*N)])
+        return Kout
+    
     
     def D(self,d):
         N = self.N
@@ -82,31 +93,12 @@ class system:
         return out
     
     def K_single(self, k):
-        if self.lattice == 'square':
-            N = 4
-            h = [[0 for i in range(N)] for ii in range(N)]
-            for i in range(0,N-1):
-                h[i][i+1] = -k
-                h[i+1][i] = -k 
-            h[N-1][0] = -k
-            h[0][N-1] = -k
-            return h
-        if self.lattice == 'triangle':
-            h = [[0 for i in range(4)] for ii in range(4)]
-            h[0][1] = -k; h[0][2] = -k; h[0][3] = -k;
-            h[1][0] = -k; h[1][2] = -k; h[1][3] = -k;
-            h[2][0] = -k; h[2][1] = -k; h[2][3] = -k;
-            h[3][0] = -k; h[3][1] = -k; h[3][2] = -k;
-            return h
-        if self.lattice == 'line':
-            N = self.N
-            h = [[0 for i in range(N)] for ii in range(N)]
-            for i in range(0,N-1):
-                h[i][i+1] = -k
-                h[i+1][i] = -k 
-            h[N-1][0] = -k
-            h[0][N-1] = -k
-            return h
+        N = self.N
+        nbrs = self.neighbors()
+        h = [[0 for i in range(N)] for j in range(N)]
+        for pair in nbrs:
+            h[pair[0]][pair[1]] = -k
+        return h
         
     def Fl(self):
         e,y = ln.eigh(self.K_single(1))
@@ -152,53 +144,55 @@ class system:
         return np.kron(psi1,psi1)
     
     def pauli_strings(self):
-        if self.lattice == 'square':
-            return ['ZZZZ','XXII','YYII','IXXI','IYYI','IIXX','IIYY','XZZX','YZZY']
-        if self.lattice == 'triangle':
-            return ['ZZZZ','XXII','YYII','XZXI','YZYI','XZZX','YZZY','IXXI','IYYI','IXZX','IYZY','IIXX','IIYY']
-        if self.lattice == 'line':
-            N = self.N
-            P0 = ''
-            for i in range(N):
-                P0 = P0 + 'Z'
-            P_list = [P0]
-            for i in range(N-1):
-                PX = ''
-                PY = ''
-                for j in range(N):
-                    if j == i or j == i+1:
-                        PX = PX + "X"
-                        PY = PY + "Y"
+        N=self.N
+        nbrs = self.neighbors()
+        pauli = ''
+        for i in range(N):
+            pauli = pauli + 'Z'
+        paulis = [pauli]
+        for pair in nbrs:
+            if pair[0] < pair[1]:
+                pauliX = ''
+                pauliY = ''
+                nonp = 'I'
+                for i in range(N):
+                    if i == pair[0]:
+                        pauliX = pauliX + 'X'
+                        pauliY = pauliY + 'Y'
+                        nonp = 'Z'
+                    elif i == pair[1]:
+                        pauliX = pauliX + 'X'
+                        pauliY = pauliY + 'Y'
+                        nonp = 'I'
                     else:
-                        PX = PX + "I"
-                        PY = PY + "I"
-                P_list.append(PX)
-                P_list.append(PY)
-            PX = 'X'
-            PY = 'Y'
-            for j in range(N-2):
-                PX = PX + "Z"
-                PY = PY + "Z"
-            PX = PX + "X"
-            PY = PY + "Y"
-            P_list.append(PX)
-            P_list.append(PY)
-            return P_list
-        return None
-            
-            
+                        pauliX = pauliX + nonp
+                        pauliY = pauliY + nonp
+                paulis.append(pauliX)
+                paulis.append(pauliY)
+        return paulis
     
 
     def draw(self):
         if self.lattice == 'square':
-            circles_y = [0,1,1,0]
-            circles_x = [0,0,1,1]
-            lines_y = [0,1,1,0,0]
-            lines_x = [0,0,1,1,0]
-            plt.scatter(circles_x,circles_y,s=500)
-            plt.plot(lines_x,lines_y)
-            plt.ylim(-1,2)
-            plt.xlim(-1,2)
+            if self.N == 4:
+                circles_y = [0,1,1,0]
+                circles_x = [0,0,1,1]
+                lines_y = [0,1,1,0,0]
+                lines_x = [0,0,1,1,0]
+                plt.scatter(circles_x,circles_y,s=500)
+                plt.plot(lines_x,lines_y)
+                plt.ylim(-1,2)
+                plt.xlim(-1,2)
+            if self.N == 8:
+                circles_y = [1,1,1,1,0,0,0,0]
+                circles_x = [0,1,2,3,3,2,1,0]
+                lines_y = [1,1,1,1,0,0,0,0,1,1,0,0,1]
+                lines_x = [0,1,2,3,3,2,1,0,0,1,1,2,2]
+                plt.scatter(circles_x,circles_y,s=500)
+                plt.plot(lines_x,lines_y)
+                plt.ylim(-1,2)
+                plt.xlim(-1,4)
+                
         if self.lattice == 'triangle':
             circles_y = [1,2,1,0]
             circles_x = [0,1,2,1]

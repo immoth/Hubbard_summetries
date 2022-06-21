@@ -55,4 +55,13 @@ class Quantum_Device:
             results_out.append(result_out)
         return results_out
     
-
+    def chop_results(self,results):
+        results_chop = []
+        for result in results:
+            result_chop = {}
+            states = list(result.keys())
+            for state in states:
+                if result[state] > 10**(-5):
+                    result_chop[state] = result[state]
+            results_chop.append(result_chop)
+        return results_chop

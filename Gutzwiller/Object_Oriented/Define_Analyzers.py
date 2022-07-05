@@ -1,6 +1,22 @@
 
 import numpy as np
 
+def post_select(results):
+    results_new = []
+    for result in results:
+        r_keys = list(result.keys())
+        r_new = {}
+        for su in r_keys:
+            nu_total = 0
+            for i in range(len(su)):
+                nu = int(su[i])
+                nu_total += nu
+            if nu_total == 2:
+                r_new[su] = result[su]
+        results_new.append(r_new)
+    return results_new
+        
+
 def analyze_GG(g,result, post_select = True):
     r_keys = list(result.keys())
     gg = 0

@@ -22,6 +22,7 @@ class system:
             if self.N != 4:
                 raise Exception('I have only defined the triangle lattices for 4 sites')
     
+    # Set of nearest neighbors as determined by the lattice and system size
     def neighbors(self):
         if self.lattice == 'line':
             N = self.N
@@ -55,6 +56,7 @@ class system:
             return nbrs
         return None
     
+    #Many body kinetic energy as determined by the set of neighbors
     def K(self,k):
         nbrs = self.neighbors()
         N = self.N
@@ -66,14 +68,15 @@ class system:
             Kout = Kout + k*Mdot([cd(i+N,2*N),c(j+N,2*N)])
         return Kout
     
-    
+    # Many body on-site Coloumb interaction
     def D(self,d):
         N = self.N
         Dout = 0*I(2*N)
         for i in range(0,N):
             Dout = Dout + Mdot([n(i,2*N),n(i+N,2*N)])
         return d*Dout
-
+    
+    #Many body chemical potential
     def M(self,u):
         N = self.N
         Dout = 0*I(2*N)
@@ -82,9 +85,11 @@ class system:
             Dout = Dout + n(i+N,2*N)
         return u*Dout
     
+    #The full many body Hamiltonian
     def H(self,k,u,d):
         return self.K(k) + self.D(d) + self.M(u)
     
+    #The many body on-site Gutzwiller projector
     def G(self,g):
         N = self.N
         out = I(2*N)
@@ -92,6 +97,7 @@ class system:
             out = Mdot([ out , I(2*N) + (np.exp(-g)-1)*Mdot([n(i,2*N),n(i+N,2*N)]) ])
         return out
     
+    #The single particle kinetic energy as determined by the set of neigbors
     def K_single(self, k):
         N = self.N
         nbrs = self.neighbors()
@@ -99,15 +105,18 @@ class system:
         for pair in nbrs:
             h[pair[0]][pair[1]] = -k
         return h
-        
+    
+    #The transformation to the eigenbasis of the single particle kinetic energy
     def Fl(self):
         e,y = ln.eigh(self.K_single(1))
         return np.transpose(y)
 
+    #The reverse transformation from the eigenbasis of the single particle kinetic energy
     def Fld(self):
         e,y = ln.eigh(self.K_single(1))
         return np.conjugate(y)
-
+    
+    #The creation operator for eigenmodes of the single particle kinetic energy
     def ad(self,n):
         F = self.Fl()
         N = len(F)
@@ -116,7 +125,8 @@ class system:
         for i in range(1,N):
             out = out + Fd[i][n]*cd(i,N)
         return out
-
+    
+    #The destruction operator for eigenmodes of the single particle kinetic energy
     def a(self,n):
         F = self.Fl()
         N = len(F)
@@ -126,12 +136,14 @@ class system:
             out = out + F[n][i]*c(i,N)
         return out
     
+    #The vacuum state
     def psi0(self):
         N = self.N
         y = [0 for i in range(2**N)]
         y[0] = 1
         return y
-
+    
+    #A spinless slater determinant state for a number of occupied modes defined by n_list
     def psi1(self,n_list):
         psi1 = self.psi0()
         for n in n_list:
@@ -139,10 +151,13 @@ class system:
             psi1 = Mdot([ad,psi1])
         return psi1
     
+    #A spinful slater determinant state for a number of occupied modes defined by n_list
     def psi_spin(self,n_list):
         psi1 = self.psi1(n_list)
         return np.kron(psi1,psi1)
     
+    #The Pauli strings which need to be measured in order to measure K and GKG.  
+    #These are determined by the set of neighbors
     def pauli_strings(self):
         N=self.N
         nbrs = self.neighbors()
@@ -171,7 +186,7 @@ class system:
                 paulis.append(pauliY)
         return paulis
     
-
+    # A function to draw the lattice of the system
     def draw(self):
         if self.lattice == 'square':
             if self.N == 4:

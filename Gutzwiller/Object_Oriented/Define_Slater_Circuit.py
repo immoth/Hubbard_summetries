@@ -4,6 +4,7 @@ from qiskit import QuantumCircuit, transpile, QuantumRegister,ClassicalRegister,
 import numpy as np
 from Define_Paulis import Mdot
 
+# A single particle rotation used to diagonalize F
 def ry(i,j,phi,N):
     M = (1+0*1j)*np.identity(N)
     M[i,i] = np.cos(phi)
@@ -12,13 +13,13 @@ def ry(i,j,phi,N):
     M[j,i] = -np.sin(phi)
     return M
 
-
+#Another single particle rotation used to diagonalize F
 def rz(j,phi,N):
     M = (1+0*1j)*np.identity(N)
     M[j,j] = np.exp(1j*phi)
     return M
 
-
+# The fermi-swap operator which is not used in the final contruction
 def fswap(i,j,qc):
     qc.swap(i,j)
     qc.ry(np.pi/2,j)
@@ -26,7 +27,8 @@ def fswap(i,j,qc):
     qc.ry(-np.pi/2,j)
     return qc
     
-
+#A general application of the ry gate to the quantum register.  
+#In the end, we only take j=i+1 so the fswaps are not used.
 def R_cc(i,j,phi,qc):
     for l in range(i+1,j):
         qc = fswap(l-1,l,qc)
@@ -44,11 +46,14 @@ def R_cc(i,j,phi,qc):
         qc = fswap(l-1,l,qc)
     return qc
 
+#Application of the full rotation to the quantum register
 def G_cc(i,j,phi,phiz,qc):
     qc = R_cc(i,j,-phi,qc)
     qc.rz(-phiz,j)
     return qc
 
+#Function which applies both ry and rz to F and returns the angles needed to remove an element at 
+#collumn c, row rj by rotating it into collumn c row ri.
 def givens(ri,rj,c,F):
     N = len(F)
     if F[rj,c] == 0:
@@ -67,6 +72,7 @@ def givens(ri,rj,c,F):
         F_new = Mdot([ry(ri,rj,phi,N) , Fz])
     return F_new,phiz,phi
 
+# Generates the slatter circuit which applies the roation F0 to the quantum register.
 def slater_circ(F0):
     Fl = [F0]
     pzl = [0]
@@ -98,6 +104,8 @@ def slater_circ(F0):
             n -= 1
     return qc
 
+# The circuit has a global phase offset from a direct application of the eigenmodes defined by the system.  
+# This function calculates that phase. 
 def phase_offset(F0):
     Fl = [F0]
     pzl = [0]

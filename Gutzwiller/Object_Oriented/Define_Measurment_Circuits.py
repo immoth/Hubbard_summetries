@@ -4,6 +4,7 @@ from Define_Slater_Circuit import slater_circ
 import numpy as np
 from Define_Paulis import  Mdot
 
+# Applies a square-root of the iSWAP operator.  This is needed for the measurment basis roation.
 def apply_riswap(qc_in,j,i):
     qc = copy.deepcopy(qc_in)
     qc.cx(j,i)
@@ -17,6 +18,7 @@ def apply_riswap(qc_in,j,i):
     qc.cx(j,i)
     return qc
 
+# Applies the measurment basis rotation
 def apply_Um(qc_in,j,i):
     qc = copy.deepcopy(qc_in)
     qc.rz(-np.pi/4,j)
@@ -24,6 +26,7 @@ def apply_Um(qc_in,j,i):
     qc = apply_riswap(qc,i,j)
     return qc
 
+# Used to swap the indecies in F
 def swap_idx(i,j,Op):
     S = np.identity(len(Op))
     S[i,i] = 0
@@ -32,6 +35,7 @@ def swap_idx(i,j,Op):
     S[j,i] = 1
     return Mdot([S,Op])
 
+# Creates a single circuit which is ready to be measured
 def create_circ(Fd,pauli):
     label = ''
     for pi in range(len(pauli)):
@@ -51,6 +55,7 @@ def create_circ(Fd,pauli):
         psi.measure(psi.qubits,psi.clbits)
     return psi
 
+# Collects all the circuits that need to be measured into a list
 def create_circs(Fd,paulis):
     circs = []
     for pauli in paulis:

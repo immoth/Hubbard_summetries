@@ -1,6 +1,8 @@
 
 import numpy as np
 
+# A function to remove states which do not have particle number 2 from the results.
+# This should be generalized to take the particle number as input. 
 def post_select(results):
     results_new = []
     for result in results:
@@ -16,7 +18,7 @@ def post_select(results):
         results_new.append(r_new)
     return results_new
         
-
+# Returns the expectation value of G(g)^2 using the result measured in the z-basis
 def analyze_GG(g,result, post_select = True):
     r_keys = list(result.keys())
     gg = 0
@@ -40,6 +42,7 @@ def analyze_GG(g,result, post_select = True):
                     gg = gg + wu*wd*gg_sr
     return gg
 
+# Returns the expectation value of G(g)D(d)G(g) using the result measured in the z-basis 
 def analyze_GDG(g,d,result, post_select = True):
     r_keys = list(result.keys())
     gg = 0
@@ -65,6 +68,7 @@ def analyze_GDG(g,d,result, post_select = True):
                     gg = gg + wu*wd*gg_sr*d_sr
     return gg
 
+# Returns the expectation value of G(g)M(m)G(g) using the result measured in the z-basis 
 def analyze_GMG(g,m,result, post_select = True):
     r_keys = list(result.keys())
     gg = 0
@@ -90,6 +94,10 @@ def analyze_GMG(g,m,result, post_select = True):
                     gg = gg + wu*wd*gg_sr*m_sr
     return gg
 
+#Generates the set of indecies after the Pauli X and Y terms have been taken to sites 0 and 1
+#fset holds the indeces 0 or 1 which do not have X or Y in the original Pauli string
+#hset holds the indeces > 1 which have X or Y in the original Pauli sting
+#The new pauli string will have indces in fset swapped with those in hset
 def find_sset(pauli):
     sset = [i for i in range(len(pauli))] #Swapped set
     fset = []
@@ -106,6 +114,8 @@ def find_sset(pauli):
         sset[fset[i]] = hset[i]
     return sset
 
+# Returns the expection balue of G(g)PG(g) where P is the Pauli string 'pauli' 
+#using the results generated for that pauli string
 def analyze_GPG(g,pauli,paulis,results, post_select = True):
     N = len(pauli)
     sset = find_sset(pauli)
@@ -145,6 +155,7 @@ def analyze_GPG(g,pauli,paulis,results, post_select = True):
                     gg = gg + wu*wd*gg_sr*k_sr
     return gg
 
+# Returns the expection balue of G(g)K(k)G(g) using the results for each pauli string 
 def analyze_GKG(g,k,paulis,results, post_select = True):
     out = 0
     for p in range(1,len(paulis),2):
@@ -153,7 +164,7 @@ def analyze_GKG(g,k,paulis,results, post_select = True):
         out += k/2*analyze_GPG(g,pauli,paulis,results, post_select = post_select) #for spin down
     return out
 
-
+#Returns the expection values of the full modified Hamiltonian G(g)H(u,k,d)G(g) using all the results
 def analyze_energy(g,u,k,d,paulis,results,post_select = True):
     num = analyze_GMG(g,u,results[0],post_select) +analyze_GDG(g,d,results[0],post_select) + analyze_GKG(g,k,paulis,results,post_select)
     dom = analyze_GG(g,results[0],post_select)

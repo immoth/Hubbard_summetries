@@ -76,6 +76,19 @@ class system:
             Dout = Dout + Mdot([n(i,2*N),n(i+N,2*N)])
         return d*Dout
     
+    # Many body nearest neighbor Coloumb interaction
+    def D2(self,d):
+        nbrs = self.neighbors()
+        N = self.N 
+        D = 0*I(2*N)
+        for pair in nbrs:
+            i = pair[0]
+            j = pair[1]
+            ni = n(i,2*N) + n(N+i,2*N)
+            nj = n(j,2*N) + n(N+j,2*N)
+            D = D + d*Mdot([ni,nj])
+        return D
+    
     #Many body chemical potential
     def M(self,u):
         N = self.N
@@ -96,6 +109,19 @@ class system:
         for i in range(N):
             out = Mdot([ out , I(2*N) + (np.exp(-g)-1)*Mdot([n(i,2*N),n(i+N,2*N)]) ])
         return out
+    
+    #The many body nearest neighbor Gutzwiller projector
+    def G2(self,g):
+        nbrs = self.neighbors()
+        N = self.N 
+        D = 0*I(2*N)
+        for pair in nbrs:
+            i = pair[0]
+            j = pair[1]
+            ni = n(i,2*N) + n(N+i,2*N)
+            nj = n(j,2*N) + n(N+j,2*N)
+            D = D + Mdot([ni,nj])
+        return ln.expm(-g*D)
     
     #The single particle kinetic energy as determined by the set of neigbors
     def K_single(self, k):

@@ -123,9 +123,6 @@ class system:
             D = D + Mdot([ni,nj])
         return ln.expm(-g*D)
     
-    def G12(self,g1,g2):
-        return Mdot([self.G(g1),self.G2(g2)] )
-    
     #The single particle kinetic energy as determined by the set of neigbors
     def K_single(self, k):
         N = self.N

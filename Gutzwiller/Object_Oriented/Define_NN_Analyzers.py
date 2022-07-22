@@ -56,6 +56,40 @@ def analyze_GG2(g,nbrs,result, post_select = True):
                     gg = gg + wu*wd*gg_sr
     return gg
 
+
+# Returns the expectation value of <G12(g)G12(g)> using the result measured in the z-basis 
+def analyze_GG12(g1,g2,nbrs,result, post_select = True):
+    r_keys = list(result.keys())
+    gg = 0
+    for su in r_keys:
+        for sd in r_keys:
+            wu = result[su]
+            wd = result[sd]
+            gg_sr = 1
+            N = len(su)
+            for i in range(len(su)):
+                nu = int(su[i])
+                nd = int(sd[i])
+                gg_sr = gg_sr*np.exp(-2*g1*nu*nd)
+            for pair in nbrs:
+                i = N-1-pair[0]
+                j = N-1-pair[1]
+                nui = int(su[i])
+                ndi = int(sd[i])
+                ni = nui + ndi
+                nuj = int(su[j])
+                ndj = int(sd[j])
+                nj = nuj + ndj
+                gg_sr = gg_sr*np.exp(-2*g2*ni*nj)
+            if post_select == False:    
+                gg = gg + wu*wd*gg_sr
+            if post_select == True:
+                if n_total(su) == 2 and n_total(sd) == 2:
+                    gg = gg + wu*wd*gg_sr
+    return gg
+
+
+
 # Returns the expectation value of <G2(g)D(d)G2(g)> using the result measured in the z-basis 
 def analyze_GDG2(g,d,nbrs,result, post_select = True):
     r_keys = list(result.keys())
@@ -88,6 +122,40 @@ def analyze_GDG2(g,d,nbrs,result, post_select = True):
                     gg = gg + wu*wd*gg_sr*d_sr
     return gg
 
+
+# Returns the expectation value of <G12(g)D(d)G12(g)> using the result measured in the z-basis 
+def analyze_GDG12(g1,g2,d,nbrs,result, post_select = True):
+    r_keys = list(result.keys())
+    gg = 0
+    for su in r_keys:
+        for sd in r_keys:
+            wu = result[su]
+            wd = result[sd]
+            gg_sr = 1
+            d_sr = 0
+            for i in range(len(su)):
+                nu = int(su[i])
+                nd = int(sd[i])
+                gg_sr = gg_sr*np.exp(-2*g1*nu*nd)
+                d_sr = d_sr + d*nu*nd
+            N = len(su)
+            for pair in nbrs:
+                i = N-1-pair[0]
+                j = N-1-pair[1]
+                nui = int(su[i])
+                ndi = int(sd[i])
+                ni = nui + ndi
+                nuj = int(su[j])
+                ndj = int(sd[j])
+                nj = nuj + ndj
+                gg_sr = gg_sr*np.exp(-2*g2*ni*nj)
+            if post_select == False:    
+                gg = gg + wu*wd*gg_sr*d_sr
+            if post_select == True:
+                if n_total(su) == 2 and n_total(sd) == 2:
+                    gg = gg + wu*wd*gg_sr*d_sr
+    return gg
+
 # Returns the expectation value of G2(g)M(m)G2(g) using the result measured in the z-basis 
 def analyze_GMG2(g,m,nbrs,result, post_select = True):
     r_keys = list(result.keys())
@@ -113,6 +181,39 @@ def analyze_GMG2(g,m,nbrs,result, post_select = True):
                 ndj = int(sd[j])
                 nj = nuj + ndj
                 gg_sr = gg_sr*np.exp(-2*g*ni*nj)
+            if post_select == False:    
+                gg = gg + wu*wd*gg_sr*m_sr
+            if post_select == True:
+                if n_total(su) == 2 and n_total(sd) == 2:
+                    gg = gg + wu*wd*gg_sr*m_sr
+    return gg
+
+# Returns the expectation value of <G12(g)M(m)G12(g)> using the result measured in the z-basis 
+def analyze_GMG12(g1,g2,m,nbrs,result, post_select = True):
+    r_keys = list(result.keys())
+    gg = 0
+    for su in r_keys:
+        for sd in r_keys:
+            wu = result[su]
+            wd = result[sd]
+            gg_sr = 1
+            m_sr = 0
+            for i in range(len(su)):
+                nu = int(su[i])
+                nd = int(sd[i])
+                gg_sr = gg_sr*np.exp(-2*g1*nu*nd)
+                m_sr = m_sr + m*nu + m*nd
+            N = len(su)
+            for pair in nbrs:
+                i = N-1-pair[0]
+                j = N-1-pair[1]
+                nui = int(su[i])
+                ndi = int(sd[i])
+                ni = nui + ndi
+                nuj = int(su[j])
+                ndj = int(sd[j])
+                nj = nuj + ndj
+                gg_sr = gg_sr*np.exp(-2*g2*ni*nj)
             if post_select == False:    
                 gg = gg + wu*wd*gg_sr*m_sr
             if post_select == True:
@@ -215,11 +316,78 @@ def analyze_GPG2(g,nbrs,pauli,paulis,results, post_select = True):
                     gg = gg + wu*wd*gg_sr*k_sr 
     return gg
 
-# Returns the expection value of <G(g)K(k)G(g)> using the results for each pauli string 
+# Returns the expection value of <G2(g)K(k)G2(g)> using the results for each pauli string 
 def analyze_GKG2(g,k,nbrs,paulis,results, post_select = True):
     out = 0
     for p in range(1,len(paulis),2):
         pauli = paulis[p]
         out += k/2*analyze_GPG2(g,nbrs,pauli,paulis,results, post_select = post_select) #for spin up
         out += k/2*analyze_GPG2(g,nbrs,pauli,paulis,results, post_select = post_select) #for spin down
+    return out
+
+# Returns the expectation value of <G12(g)P G12(g)> where P is a pauli string using the results for P
+def analyze_GPG12(g1,g2,nbrs,pauli,paulis,results, post_select = True):
+    N = len(pauli)
+    sset = find_sset(pauli)
+    idx = paulis.index(pauli)
+    resultd = results[idx]
+    resultu = results[0]
+    ru_keys = list(resultu.keys())
+    rd_keys = list(resultd.keys())
+    gg = 0
+    for su in ru_keys:
+        for sd in rd_keys:
+            wu = resultu[su]
+            wd = resultd[sd]
+            gg_sr = 1
+            z0 = 1
+            z1 = 1
+            if sd[N-1] == '1':
+                z0 = -1
+            if sd[N-2] == '1':
+                z1 = -1
+            k_sr = z0 - z1
+            N  = len(su)
+            for i in range(len(su)):
+                nu = int(su[N-1-sset[i] ])
+                nd = int(sd[N-1-i])
+                if i == 0 or i == 1:
+                    gg_sr = gg_sr*np.exp(-g1*nu)
+                else:
+                    gg_sr = gg_sr*np.exp(-2*g1*nu*nd) 
+            for pair in nbrs:
+                ui = N-1-pair[0]
+                di = N-1-sset[pair[0]]
+                uj = N-1-pair[1]
+                dj = N-1-sset[pair[1]]
+                nui = int(su[ui])
+                ndi = int(sd[di])
+                ni = nui + ndi
+                nuj = int(su[uj])
+                ndj = int(sd[dj])
+                nj = nuj + ndj
+                if di == N-1 and dj == N-2:
+                    gg_sr = gg_sr*np.exp(-g2*(nui+nuj)**2) 
+                elif dj == N-1 and di == N-2:
+                    gg_sr = gg_sr*np.exp(-g2*(nui+nuj)**2)
+                elif di == N-1 or di == N-2:
+                    gg_sr = gg_sr*np.exp(-g2*(1+2*nui)*nj)
+                elif dj == N-1 or dj == N-2:
+                    gg_sr = gg_sr*np.exp(-g2*ni*(1+2*nuj))
+                else:
+                    gg_sr = gg_sr*np.exp(-2*g2*ni*nj)
+            if post_select == False:    
+                gg = gg + wu*wd*gg_sr*k_sr
+            if post_select == True:
+                if n_total(su) == 2 and n_total(sd) == 2:
+                    gg = gg + wu*wd*gg_sr*k_sr 
+    return gg
+
+# Returns the expection value of <G12(g)K(k)G12(g)> using the results for each pauli string 
+def analyze_GKG12(g1,g2,k,nbrs,paulis,results, post_select = True):
+    out = 0
+    for p in range(1,len(paulis),2):
+        pauli = paulis[p]
+        out += k/2*analyze_GPG12(g1,g2,nbrs,pauli,paulis,results, post_select = post_select) #for spin up
+        out += k/2*analyze_GPG12(g1,g2,nbrs,pauli,paulis,results, post_select = post_select) #for spin down
     return out
